@@ -3,6 +3,7 @@ apply plugin: 'maven'
 apply from: 'installation/apply-local.groovy'
 
 configurations {
+	releaseArtifacts {}
 	installers {}
 	latestInstallers {}
 	deployerJars {}
@@ -34,13 +35,22 @@ updateVersion << {
 }
 
 artifacts {
-	archives jar
+	releaseArtifacts jar
 	installers file('installation/apply.groovy')
 	latestInstallers file('installation/apply.groovy')
 }
 
-uploadArchives {
+uploadReleaseArtifacts {
 	repositories {
+		/*
+		ivy {
+			url = btUrl
+			credentials {
+				username btUser
+				password btPass
+			}
+		}
+		*/
 		mavenDeployer {
 			configuration = configurations.deployerJars
 			repository(url: releaseRepoUrl) { authentication(userName: releaseRepoUser, password: releaseRepoPass) }
@@ -66,5 +76,5 @@ uploadLatestInstallers {
 	}
 }
 
-createReleaseTag.dependsOn uploadArchives
+createReleaseTag.dependsOn uploadReleaseArtifacts
 createReleaseTag.dependsOn uploadInstallers

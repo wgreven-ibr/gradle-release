@@ -3,6 +3,7 @@ apply plugin: 'maven'
 apply from: 'installation/apply-local.groovy'
 
 configurations {
+	releaseArtifacts {}
 	installers {}
 	deployerJars {}
 }
@@ -30,11 +31,11 @@ updateVersion << {
 }
 
 artifacts {
-	archives jar
+	releaseArtifacts jar
 	installers file('installation/apply.groovy')
 }
 
-uploadArchives {
+uploadReleaseArtifacts {
 	repositories {
 		mavenDeployer {
 			configuration = configurations.deployerJars
@@ -52,5 +53,5 @@ uploadInstallers {
 	}
 }
 
-createReleaseTag.dependsOn uploadArchives
+createReleaseTag.dependsOn uploadReleaseArtifacts
 createReleaseTag.dependsOn uploadInstallers
