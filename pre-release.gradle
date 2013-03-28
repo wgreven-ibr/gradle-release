@@ -1,5 +1,6 @@
 apply plugin: 'groovy'
 apply plugin: 'maven'
+apply plugin: 'signing'
 apply from: 'installation/apply-local.groovy'
 
 configurations {
@@ -17,7 +18,7 @@ dependencies {
 	compile gradleApi(),
 			'org.ajoberstar:gradle-git:0.4.0'
 	groovy localGroovy()
-	testCompile( 'org.spockframework:spock-core:0.5-groovy-1.8' ) { exclude group: 'org.codehaus.groovy' }
+	testCompile('org.spockframework:spock-core:0.5-groovy-1.8') { exclude group: 'org.codehaus.groovy' }
 	testCompile 'junit:junit:4.10'
 	deployerJars 'org.apache.maven.wagon:wagon-ftp:2.2'
 }
@@ -30,16 +31,45 @@ updateVersion << {
 	ant.replace(file: applyFile, token: "${group}:${name}:${oldVersion}", value: "${group}:${name}:${newVersion}")
 }
 
-artifacts {
-	releaseArtifacts jar
-	installers file('installation/apply.groovy')
-}
+
 
 uploadReleaseArtifacts {
 	repositories {
 		mavenDeployer {
-			configuration = configurations.deployerJars
-			repository(url: releaseRepoUrl) { authentication(userName: releaseRepoUser, password: releaseRepoPass) }
+			//configuration = configurations.deployerJars
+			//repository(url: releaseRepoUrl) { authentication(userName: releaseRepoUser, password: releaseRepoPass) }
+
+			beforeDeployment { MavenDeployment deployment -> signPom(deployment) }
+			repository(url: 'https://oss.sonatype.org/content/repositories/snapshots') {
+				authentication(userName: releaseRepoUser, password: releaseRepoPass)
+			}
+			pom.project {
+				name 'gradle-release'
+				packaging 'jar'
+				description 'gradle-release is a plugin for providing a Maven-like release process to project using Gradle.'
+				url 'https://github.com/townsfolk/gradle-release'
+
+				scm {
+					url 'scm:git@github.com:townsfolk/gradle-release.git'
+					connection 'scm:git@github.com:townsfolk/gradle-release.git'
+					developerConnection 'scm:git@github.com:townsfolk/gradle-release.git'
+				}
+
+				licenses {
+					license {
+						name 'The MIT License (MIT)'
+						url 'http://opensource.org/licenses/MIT'
+						distribution 'repo'
+					}
+				}
+
+				developers {
+					developer {
+						id 'townsfolk'
+						name 'Eric Berry'
+					}
+				}
+			}
 		}
 	}
 }
@@ -51,6 +81,27 @@ uploadInstallers {
 			addArtifactPattern "${releaseRepoBase}/[module]/[revision]/[artifact].[ext]"
 		}
 	}
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+artifacts {
+	releaseArtifacts jar
+	releaseArtifacts javadocJar
+	releaseArtifacts sourcesJar
+	installers file('installation/apply.groovy')
+}
+
+signing {
+	sign configurations.releaseArtifacts
 }
 
 createReleaseTag.dependsOn uploadReleaseArtifacts
