@@ -31,14 +31,9 @@ updateVersion << {
 	ant.replace(file: applyFile, token: "${group}:${name}:${oldVersion}", value: "${group}:${name}:${newVersion}")
 }
 
-
-
 uploadReleaseArtifacts {
 	repositories {
 		mavenDeployer {
-			//configuration = configurations.deployerJars
-			//repository(url: releaseRepoUrl) { authentication(userName: releaseRepoUser, password: releaseRepoPass) }
-
 			beforeDeployment { MavenDeployment deployment -> signPom(deployment) }
 			repository(url: 'https://oss.sonatype.org/content/repositories/snapshots') {
 				authentication(userName: releaseRepoUser, password: releaseRepoPass)
