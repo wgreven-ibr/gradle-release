@@ -6,4 +6,6 @@ package release
  */
 class SvnReleasePluginConvention {
     String tags = 'tags'
+    String username
+    String password
 }
