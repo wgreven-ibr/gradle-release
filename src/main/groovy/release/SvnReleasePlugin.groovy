@@ -20,14 +20,12 @@ class SvnReleasePlugin extends BaseScmPlugin<SvnReleasePluginConvention> {
 		findSvnUrl()
 	}
 
-
-	@Override
-	SvnReleasePluginConvention buildConventionInstance() { new SvnReleasePluginConvention() }
-
+    @Override
+    SvnReleasePluginConvention buildConventionInstance() { releaseConvention().svn }
 
 	@Override
 	void checkCommitNeeded() {
-		String out = exec('svn', 'status')
+		String out = exec('svn', *credentialsArgs, 'status')
 		def changes = []
 		def unknown = []
 		out.eachLine { line ->
@@ -57,7 +55,7 @@ class SvnReleasePlugin extends BaseScmPlugin<SvnReleasePluginConvention> {
 		String svnRoot = props.releaseSvnRoot
 		String svnRemoteRev = ""
 		// svn status -q -u
-		String out = exec('svn', 'status', '-q', '-u')
+		String out = exec('svn', *credentialsArgs, 'status', '-q', '-u')
 		def missing = []
 		out.eachLine { line ->
 			switch (line?.trim()?.charAt(0)) {
@@ -70,7 +68,7 @@ class SvnReleasePlugin extends BaseScmPlugin<SvnReleasePluginConvention> {
 			warnOrThrow(releaseConvention().failOnUpdateNeeded, "You are missing ${missing.size()} changes.")
 		}
 
-		out = exec(true, [LC_COLLATE: "C", LC_CTYPE: "en_US.UTF-8"], 'svn', 'info', project.ext['releaseSvnUrl'])
+		out = exec(true, [LC_COLLATE: "C", LC_CTYPE: "en_US.UTF-8"], 'svn', *credentialsArgs, 'info', project.ext['releaseSvnUrl'])
 		out.eachLine { line ->
 			Matcher matcher = line =~ revPattern
 			if (matcher.matches()) {
@@ -93,18 +91,18 @@ class SvnReleasePlugin extends BaseScmPlugin<SvnReleasePluginConvention> {
 		String svnRoot = props.releaseSvnRoot
 		String svnTag = tagName()
 
-		exec('svn', 'cp', "${svnUrl}@${svnRev}", "${svnRoot}/tags/${svnTag}", '-m', message ?: "Created by Release Plugin: ${svnTag}")
+		exec('svn', *credentialsArgs, 'cp', "${svnUrl}@${svnRev}", "${svnRoot}/tags/${svnTag}", '-m', message ?: "Created by Release Plugin: ${svnTag}")
 	}
 
 
 	@Override
 	void commit(String message) {
-		exec(['svn', 'ci', '-m', message], 'Error committing new version', ERROR)
+		exec(['svn'] +  credentialsArgs + ['ci', '-m', message], 'Error committing new version', ERROR)
 	}
 
 	@Override
 	void revert() {
-		exec(['svn', 'revert', findPropertiesFile().name], 'Error reverting changes made by the release plugin.', ERROR)
+		exec(['svn'] + credentialsArgs + ['revert', findPropertiesFile().name], 'Error reverting changes made by the release plugin.', ERROR)
 	}
 
 
@@ -130,4 +128,15 @@ class SvnReleasePlugin extends BaseScmPlugin<SvnReleasePluginConvention> {
 			throw new GradleException('Could not determine root SVN url.')
 		}
 	}
+
+    private List<String> getCredentialsArgs() {
+        def result = []
+        if (buildConventionInstance().username != null) {
+            result += ['--username', buildConventionInstance().username]
+            if (buildConventionInstance().password != null) {
+                result += ['--password', buildConventionInstance().password]
+            }
+        }
+        result
+    }
 }

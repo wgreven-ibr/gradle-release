@@ -34,6 +34,7 @@ class ReleasePluginConvention {
 	]
 
 	def git = new GitReleasePluginConvention()
+    def svn = new SvnReleasePluginConvention()
 
     String versionPropertyFile = 'gradle.properties'
     def versionProperties = []
