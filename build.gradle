@@ -1,5 +1,6 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
+apply plugin: 'maven-publish'
 
 defaultTasks 'clean', 'build'
 
@@ -14,3 +15,16 @@ dependencies {
 	testCompile "junit:junit:$junitVersion",
 			"org.ajoberstar:gradle-git:$gradleGitVersion"
 }
+
+publishing {
+    publications {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+}
+
+test.enabled = false
+
