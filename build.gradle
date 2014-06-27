@@ -24,6 +24,20 @@ publishing {
             }
         }
     }
+    repositories {
+        maven {
+            name 'imt'
+            credentials {
+                username nexusUsername
+                password nexusPassword
+            }
+            if (project.version.endsWith('-SNAPSHOT')) {
+                url 'http://nexus-repo.nl.rsg/content/repositories/imt-snapshots/'
+            } else {
+                url 'http://nexus-repo.nl.rsg/content/repositories/imt-releases/'
+            }
+        }
+    }
 }
 
 test.enabled = false
